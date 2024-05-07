@@ -2,21 +2,26 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using MyBulky.Data;
 using MyBulky.Models;
 
-namespace MyBulky.Controllers
+namespace MyBulky.Areas.Admin.Controllers
 {
     public class ProductsController : Controller
     {
         private readonly AppDBContext _context;
+        private readonly IWebHostEnvironment _webHostEnvironment;
 
-        public ProductsController(AppDBContext context)
+
+        public ProductsController(AppDBContext context, IWebHostEnvironment webHostEnvironment)
         {
             _context = context;
+            _webHostEnvironment = webHostEnvironment;
+
         }
 
         // GET: Products
@@ -48,6 +53,7 @@ namespace MyBulky.Controllers
         // GET: Products/Create
         public IActionResult Create()
         {
+
             ViewData["CategoryId"] = new SelectList(_context.Categories, "CategoryId", "Name");
             return View();
         }
@@ -57,17 +63,42 @@ namespace MyBulky.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,Title,Description,ISBN,Author,Price,CategoryId,ImgUrl")] Product product)
+        public async Task<IActionResult> Create(
+            [Bind("Id,Title,Description,ISBN,Author,Price,CategoryId,ImgUrl")] Product product,
+            IFormFile? file)
         {
             if (ModelState.IsValid)
             {
+                string wwwRootPath = _webHostEnvironment.WebRootPath;
+                if (file != null)
+                {
+                    string filename = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
+                    string productPath = Path.Combine(wwwRootPath, @"images\product");
+                    if (!string.IsNullOrEmpty(product.ImgUrl))
+                    {
+                        var oldImagePath = Path.Combine(wwwRootPath, product.ImgUrl.TrimStart('\\'));
+                        if (System.IO.File.Exists(oldImagePath))
+                        {
+                            System.IO.File.Delete(oldImagePath);
+                        }
+                    }
+                    using (var fileStream = new FileStream(Path.Combine(productPath, filename), FileMode.Create))
+                    {
+                        file.CopyTo(fileStream);
+                    }
+                    product.ImgUrl = @"\images\product\" + filename;
+                }
+                ViewData["CategoryId"] = new SelectList(_context.Categories, "CategoryId", "Name", product.CategoryId);
                 _context.Add(product);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["CategoryId"] = new SelectList(_context.Categories, "CategoryId", "Name", product.CategoryId);
-            return View(product);
+            else
+            {
+                return View(product);
+            }
         }
+
 
         // GET: Products/Edit/5
         public async Task<IActionResult> Edit(int? id)

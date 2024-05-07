@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using MyBulky.Data;
 using MyBulky.Models;
 
-namespace MyBulky.Controllers
+namespace MyBulky.Areas.Admin.Controllers
 {
     public class CategoriesController : Controller
     {

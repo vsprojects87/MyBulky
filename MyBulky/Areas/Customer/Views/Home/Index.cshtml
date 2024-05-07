@@ -1,0 +1,49 @@
+﻿@model IEnumerable<Product>
+
+@{
+	ViewData["Title"] = "Home Page";
+}
+
+<div class="row">
+	@foreach (var product in Model)
+	{
+		<div class="col-lg-3 col-sm-6">
+			<div class="row p-2">
+				<div class="col-12 p-1">
+					<div class="card border-0 p-3 shadow border-top border-5 rounded">
+						<img src="@product.ImgUrl" class="card-img-top rounded" />
+
+						<div class="card-body pb-0">
+							<div class="pl-1">
+
+								@* we only want title name until 2 rows and want to show ... at the end of second
+									row if title is bigger than two rows else it will display whole name
+									we have taken 35 length since two rows only can display 35 characters in a row
+									on card for every book
+									- see index page for more details
+									p.s. added title in div in case title is only one row big and other book title
+									is two row big then whole card height will be different for both the cards
+									for that purpose wether title is one or two row big it will always have height for 
+									two rows
+								*@
+								<div style="height:55px;overflow:hidden">
+									<p class="card-title h5 text-dark opacity-75 text-upppercase text-center">@(product.Title.Length > 35 ? product.Title.Substring(0, 35) + "..." : product.Title)</p>
+								</div>
+								<p class="card-title text-warning text-center">by <b>@product.Author</b></p>
+							</div>
+							<div class="pl-1">
+								<p class="text-dark text-opacity-75 text-center">
+									List Price: <span>@product.Price.ToString("c")</span>
+								</p>
+							</div>
+						</div>
+						<div>
+							<a asp-controller="Home" asp-action="Details" asp-route-id="@product.Id" class="btn btn-primary bg-gradient border-0 form-control">Details</a>
+						</div>
+
+					</div>
+				</div>
+			</div>
+		</div>
+	}
+</div>
