@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Bulky.DataAccess.Repository.IRepository;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -10,38 +11,27 @@ using MyBulky.Models;
 
 namespace MyBulky.Areas.Admin.Controllers
 {
-    public class CategoriesController : Controller
+	[Area("Admin")]
+	public class CategoriesController : Controller
     {
-        private readonly AppDBContext _context;
 
-        public CategoriesController(AppDBContext context)
+		private readonly IUnitOfWork _unitOfWork;
+
+		public CategoriesController(IUnitOfWork unitOfWork)
         {
-            _context = context;
+			_unitOfWork = unitOfWork;
+		}
+
+		// GET: Categories
+		public IActionResult Index()
+        {
+			//List<Category> objCategoryList = _unitOfWork.Category.GetAll().ToList();
+			//return View(objCategoryList);
+            // best practice
+
+            return View(_unitOfWork.Category.GetAll().ToList());
         }
 
-        // GET: Categories
-        public async Task<IActionResult> Index()
-        {
-            return View(await _context.Categories.ToListAsync());
-        }
-
-        // GET: Categories/Details/5
-        public async Task<IActionResult> Details(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var category = await _context.Categories
-                .FirstOrDefaultAsync(m => m.CategoryId == id);
-            if (category == null)
-            {
-                return NotFound();
-            }
-
-            return View(category);
-        }
 
         // GET: Categories/Create
         public IActionResult Create()
@@ -54,26 +44,26 @@ namespace MyBulky.Areas.Admin.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("CategoryId,Name")] Category category)
+        public IActionResult Create([Bind("CategoryId,Name")] Category category)
         {
             if (ModelState.IsValid)
             {
-                _context.Add(category);
-                await _context.SaveChangesAsync();
+				_unitOfWork.Category.Add(category);
+                _unitOfWork.Save();
                 return RedirectToAction(nameof(Index));
             }
             return View(category);
         }
 
         // GET: Categories/Edit/5
-        public async Task<IActionResult> Edit(int? id)
+        public IActionResult Edit(int? id)
         {
             if (id == null)
             {
                 return NotFound();
             }
 
-            var category = await _context.Categories.FindAsync(id);
+            var category = _unitOfWork.Category.Get(x=>x.CategoryId==id);
             if (category == null)
             {
                 return NotFound();
@@ -86,7 +76,7 @@ namespace MyBulky.Areas.Admin.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("CategoryId,Name")] Category category)
+        public IActionResult Edit(int id, [Bind("CategoryId,Name")] Category category)
         {
             if (id != category.CategoryId)
             {
@@ -97,8 +87,8 @@ namespace MyBulky.Areas.Admin.Controllers
             {
                 try
                 {
-                    _context.Update(category);
-                    await _context.SaveChangesAsync();
+                    _unitOfWork.Category.Update(category);
+                    _unitOfWork.Save();
                 }
                 catch (DbUpdateConcurrencyException)
                 {
@@ -117,15 +107,15 @@ namespace MyBulky.Areas.Admin.Controllers
         }
 
         // GET: Categories/Delete/5
-        public async Task<IActionResult> Delete(int? id)
+        public IActionResult Delete(int? id)
         {
             if (id == null)
             {
                 return NotFound();
             }
 
-            var category = await _context.Categories
-                .FirstOrDefaultAsync(m => m.CategoryId == id);
+            var category = _unitOfWork.Category
+                .Get(m => m.CategoryId == id);
             if (category == null)
             {
                 return NotFound();
@@ -137,21 +127,25 @@ namespace MyBulky.Areas.Admin.Controllers
         // POST: Categories/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
+        public IActionResult DeleteConfirmed(int id)
         {
-            var category = await _context.Categories.FindAsync(id);
+            var category = _unitOfWork.Category.Get(x=>x.CategoryId==id);
             if (category != null)
             {
-                _context.Categories.Remove(category);
+                _unitOfWork.Category.Delete(category);
             }
 
-            await _context.SaveChangesAsync();
+            _unitOfWork.Save();
             return RedirectToAction(nameof(Index));
         }
 
         private bool CategoryExists(int id)
         {
-            return _context.Categories.Any(e => e.CategoryId == id);
+			Category cat = _unitOfWork.Category.Get(e => e.CategoryId == id);
+            if (cat == null) {
+                return false;
+			}
+            return true;
         }
     }
 }

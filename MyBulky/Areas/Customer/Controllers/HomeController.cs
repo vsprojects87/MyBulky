@@ -6,7 +6,9 @@ using System.Diagnostics;
 
 namespace MyBulky.Areas.Customer.Controllers
 {
-    public class HomeController : Controller
+	[Area("Customer")]
+
+	public class HomeController : Controller
     {
 		private readonly AppDBContext _context;
 
